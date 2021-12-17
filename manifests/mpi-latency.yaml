@@ -1,0 +1,59 @@
+apiVersion: kubeflow.org/v1alpha2
+kind: MPIJob
+metadata:
+  name: efa-latency
+spec:
+  slotsPerWorker: 72
+  cleanPodPolicy: Running
+  mpiReplicaSpecs:
+    Launcher:
+      replicas: 1
+      template:
+         spec:
+          hostNetwork: true
+          restartPolicy: OnFailure
+          dnsPolicy: ClusterFirstWithHostNet
+          containers:
+          - image: quay.io/cgament/mpi:efa
+            imagePullPolicy: Always
+            name: osu-latency-launcher
+            env:
+            - name: PATH
+              value: "/opt/amazon/openmpi/bin:/opt/amazon/efa/bin/:$PATH"
+            - name: LD_LIBRARY_PATH
+              value: "/opt/amazon/openmpi/lib64:/opt/amazon/efa/lib64:$LD_LIBRARY_PATH"
+            - name: I_MPI_DEBUG
+              value: "2000"
+            command:
+              - /opt/amazon/openmpi/bin/mpirun
+              - --allow-run-as-root
+              - -np
+              - "2"
+              - -verbose
+              - -N
+              - "1"
+              - -x
+              - PATH
+              - -x
+              - LD_LIBRARY_PATH
+              - --map-by
+              - slot
+              - /tmp/osu-micro-benchmarks-5.7.1/mpi/pt2pt/osu_latency
+    Worker:
+      replicas: 2
+      template:
+        spec:
+          hostNetwork: true
+          dnsPolicy: ClusterFirstWithHostNet
+          containers:
+          - image: quay.io/cgament/mpi:efa
+            name: osu-latency-worker
+            imagePullPolicy: Always
+            resources:
+              limits:
+                hugepages-2Mi: 5120Mi
+                memory: 154000Mi
+                vpc.amazonaws.com/efa: 1
+              requests:
+                memory: 154000Mi
+                vpc.amazonaws.com/efa: 1

@@ -1,7 +1,7 @@
 apiVersion: kubeflow.org/v1alpha2
 kind: MPIJob
 metadata:
-  name: osu-efa-test-ompi
+  name: efa-support
 spec:
   slotsPerWorker: 72
   cleanPodPolicy: Running
@@ -12,10 +12,11 @@ spec:
          spec:
           hostNetwork: true
           restartPolicy: OnFailure
+          dnsPolicy: ClusterFirstWithHostNet
           containers:
-          - image: quay.io/cgament/mpi:efa-sshd
+          - image: quay.io/cgament/mpi:efa
             imagePullPolicy: Always
-            name: osu-efa-test-launcher
+            name: efa-support-launcher
             env:
             - name: PATH
               value: "/opt/amazon/openmpi/bin:/opt/amazon/efa/bin/:$PATH"
@@ -37,11 +38,6 @@ spec:
               - LD_LIBRARY_PATH
               - --map-by
               - slot
-              - -mca
-              - plm_rsh_agent
-              - /usr/bin/ssh
-#              - /tmp/osu-micro-benchmarks-5.7.1/mpi/pt2pt/osu_latency
-              # To verify EFA device is working properly comment out line above and uncomment 3 lines below
               - /opt/amazon/efa/bin/fi_info
               - -p
               - efa
@@ -50,9 +46,10 @@ spec:
       template:
         spec:
           hostNetwork: true
+          dnsPolicy: ClusterFirstWithHostNet
           containers:
-          - image: quay.io/cgament/mpi:efa-sshd
-            name: osu-efa-test-ompi-worker
+          - image: quay.io/cgament/mpi:efa
+            name: efa-support-worker
             imagePullPolicy: Always
             resources:
               limits:
