@@ -10,7 +10,7 @@ spec:
       summary=Boot time configuration for hugepages
       include=openshift-node
       [bootloader]
-      cmdline_openshift_node_hugepages=hugepagesz=2M hugepages=5128
+      cmdline_openshift_node_hugepages=hugepagesz=2M hugepages=10256M
     name: openshift-node-hugepages
 
   recommend:
