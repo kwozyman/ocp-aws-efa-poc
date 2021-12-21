@@ -1,7 +1,7 @@
 apiVersion: kubeflow.org/v1alpha2
 kind: MPIJob
 metadata:
-  name: osu-efa-test-ompi
+  name: efa-test-tcp
 spec:
   slotsPerWorker: 72
   cleanPodPolicy: Running
@@ -16,7 +16,7 @@ spec:
           restartPolicy: OnFailure
           containers:
           - image: quay.io/cgament/mpi:efa
-            name: osu-efa-test-launcher
+            name: osu-efa-test-tcp-launcher
             env:
             - name: PATH
               value: "/opt/amazon/openmpi/bin:/opt/amazon/efa/bin/:$PATH"
@@ -33,6 +33,12 @@ spec:
             - "2"
             - -N
             - "1"
+            - --mca
+            - btl
+            - ^ofi
+            - --mca
+            - mtl
+            - ^ofi
             - -x
             - PATH
             - -x
@@ -54,7 +60,7 @@ spec:
           imagePullPolicy: Always
           containers:
           - image: quay.io/cgament/mpi:efa
-            name: osu-efa-test-ompi-worker
+            name: osu-efa-test-tcp-worker
             resources:
               limits:
                 hugepages-2Mi: 5120Mi

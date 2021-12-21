@@ -1,11 +1,11 @@
 apiVersion: kubeflow.org/v1alpha2
 kind: MPIJob
 metadata:
-  name: osu-efa-test-ompi
+  name: osu-efa-test-intel
 spec:
   slotsPerWorker: 72
   cleanPodPolicy: Running
-  mpiDistribution: OpenMPI
+  mpiDistribution: IntelMPI
   mpiReplicaSpecs:
     Launcher:
       replicas: 1
@@ -15,37 +15,33 @@ spec:
           imagePullPolicy: Always
           restartPolicy: OnFailure
           containers:
-          - image: quay.io/cgament/mpi:efa
-            name: osu-efa-test-launcher
+          - image: quay.io/cgament/mpi:intel
+            volumeMounts:
+              - mountPath: /dev/shm
+                name: dshm
+            name: osu-efa-intel-launcher
             env:
-            - name: PATH
-              value: "/opt/amazon/openmpi/bin:/opt/amazon/efa/bin/:$PATH"
-            - name: LD_LIBRARY_PATH
-              value: "/opt/amazon/openmpi/lib64:/opt/amazon/efa/lib64:$LD_LIBRARY_PATH"
-            - name: OMPI_MCA_mtl_base_verbose
-              value: "100"
+            - name: I_MPI_DEBUG
+              value: "5"
             - name: FI_LOG_LEVEL
-              value: "1"
+              value: "5"
+            - name: I_MPI_SHM
+              value: "off"
             command:
-            - /opt/amazon/openmpi/bin/mpirun
-            - --allow-run-as-root
-            - -np
+            - /opt/intel/oneapi/mpi/2021.3.0/bin/mpirun
+            - -n
             - "2"
-            - -N
+            - -ppn
             - "1"
-            - -x
-            - PATH
-            - -x
-            - LD_LIBRARY_PATH
-            - -x
-            - OMPI_MCA_mtl_base_verbose
-            - --map-by
-            - slot
             - /tmp/osu-micro-benchmarks-5.7.1/mpi/pt2pt/osu_latency
             # To verify EFA device is working properly comment out line above and uncomment 3 lines below
-            # - /opt/amazon/efa/bin/fi_info
-            # - -p
-            # - efa
+            #- /opt/amazon/efa/bin/fi_info
+            #- -p
+            #- efa
+          volumes:
+            - name: dshm
+              emptyDir:
+                medium: Memory
     Worker:
       replicas: 2
       template:
@@ -53,8 +49,11 @@ spec:
           hostNetwork: true
           imagePullPolicy: Always
           containers:
-          - image: quay.io/cgament/mpi:efa
-            name: osu-efa-test-ompi-worker
+          - image: quay.io/cgament/mpi:intel
+            volumeMounts:
+              - mountPath: /dev/shm
+                name: dshm
+            name: osu-efa-intel-worker-ping
             resources:
               limits:
                 hugepages-2Mi: 5120Mi
@@ -63,3 +62,7 @@ spec:
               requests:
                 memory: 154000Mi
                 vpc.amazonaws.com/efa: 1
+          volumes:
+            - name: dshm
+              emptyDir:
+                medium: Memory
