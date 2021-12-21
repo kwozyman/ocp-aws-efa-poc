@@ -1,0 +1,34 @@
+apiVersion: "autoscaling.openshift.io/v1"
+kind: "ClusterAutoscaler"
+metadata:
+  name: "default"
+  namespace: "openshift-machine-api"
+spec:
+  podPriorityThreshold: -10
+  resourceLimits:
+    maxNodesTotal: 10
+    cores:
+      min: 72
+      max: 720
+    memory:
+      min: 144
+      max: 1440
+  scaleDown:
+    enabled: true
+    delayAfterAdd: 10m
+    delayAfterDelete: 5m
+    delayAfterFailure: 30s
+    unneededTime: 5m
+---
+apiVersion: "autoscaling.openshift.io/v1beta1"
+kind: "MachineAutoscaler"
+metadata:
+  name: "worker-us-east-1a"
+  namespace: "openshift-machine-api"
+spec:
+  minReplicas: 1
+  maxReplicas: 4
+  scaleTargetRef:
+    apiVersion: machine.openshift.io/v1beta1
+    kind: MachineSet
+    name: efa-test-n42zl-worker-us-east-1a
