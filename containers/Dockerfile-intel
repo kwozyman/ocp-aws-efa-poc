@@ -1,0 +1,40 @@
+FROM public.ecr.aws/amazonlinux/amazonlinux:2.0.20210721.2
+
+# Install packages
+RUN yum install -y \
+    gcc \
+    gcc-c++ \
+    gcc-gfortran \
+    gzip \
+    make \
+    man \
+    man-pages \
+    procps \
+    tar \
+    util-linux \
+    wget
+
+# Install EFA
+RUN curl -L https://efa-installer.amazonaws.com/aws-efa-installer-1.12.3.tar.gz -o /tmp/aws-efa-installer-1.12.3.tar.gz && \
+    tar -xf /tmp/aws-efa-installer-1.12.3.tar.gz -C /tmp && \
+    cd /tmp/aws-efa-installer && \
+    ./efa_installer.sh -y -d --skip-kmod --skip-limit-conf --no-verify --minimal && \
+    rm -f /tmp/aws-efa-installer-1.12.3.tar.gz
+
+# Install Intel OneApi
+RUN curl -L https://registrationcenter-download.intel.com/akdlm/irc_nas/17912/l_HPCKit_p_2021.3.0.3230.sh -o /tmp/l_HPCKit_p_2021.3.0.3230.sh && \
+    bash /tmp/l_HPCKit_p_2021.3.0.3230.sh -a -s \
+    --components intel.oneapi.lin.mpi.devel:intel.oneapi.lin.dpcpp-cpp-compiler-pro:intel.oneapi.lin.ifort-compiler \
+    --eula accept && \
+    rm -f /tmp/l_HPCKit_p_2021.3.0.3230.sh
+
+
+# Install osu-micro-benchmarks
+RUN source /opt/intel/oneapi/setvars.sh --force && \
+    wget https://mvapich.cse.ohio-state.edu/download/mvapich/osu-micro-benchmarks-5.7.1.tgz -O /tmp/osu-micro-benchmarks-5.7.1.tgz --no-check-certificate && \
+    tar zxvf /tmp/osu-micro-benchmarks-5.7.1.tgz -C /tmp && \
+    cd /tmp/osu-micro-benchmarks-5.7.1/ && \
+    ./configure CC=mpiicc CXX=mpiicpc && \
+    make -j 4 && \
+    cat config.log && \
+    rm -f /tmp/osu-micro-benchmarks-5.7.1.tgz
