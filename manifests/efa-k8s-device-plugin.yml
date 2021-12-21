@@ -20,6 +20,9 @@ spec:
     spec:
       serviceAccount: default
       tolerations:
+        - key: cpu
+          operator: Exists
+          effect: NoSchedule
         - key: CriticalAddonsOnly
           operator: Exists
         - key: aws.amazon.com/efa
@@ -83,5 +86,3 @@ spec:
         - name: device-plugin
           hostPath:
             path: /var/lib/kubelet/device-plugins
-
-
