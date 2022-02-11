@@ -2,6 +2,7 @@ apiVersion: kubeflow.org/v1alpha2
 kind: MPIJob
 metadata:
   name: osu-efa-test-ompi
+  namespace: default
 spec:
   slotsPerWorker: 72
   cleanPodPolicy: Running
